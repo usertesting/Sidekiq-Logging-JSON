@@ -1,12 +1,10 @@
+require "sidekiq"
 require "sidekiq/logging/json/version"
-require "sidekiq/logging/json"
-require "json"
 
 module Sidekiq
   module Logging
     module Json
       class Logger < Sidekiq::Logging::Pretty
-        # Provide a call() method that returns the formatted message.
         def call(severity, time, program_name, message)
           {
             'timestamp' => time.utc.iso8601,
@@ -24,10 +22,15 @@ module Sidekiq
           }.merge(process_message(message)).to_json + "\n"
         end
 
+        private
+
         def process_message(message)
           case message
           when Exception
-            { 'status' => 'exception', 'message' => message.message }
+            {
+              'status' => 'exception',
+              'message' => message.message
+            }
           when Hash
             if message["retry"]
               {
